@@ -24,7 +24,11 @@ app.add_middleware(
 )
 
 BASE_DIR = Path(__file__).resolve().parent
-FRONTEND_DIR = BASE_DIR.parent / "frontend"
+# Lives inside backend/ so it is bundled when Vercel's root directory is backend/.
+FRONTEND_DIR = next(
+    (d for d in (BASE_DIR / "frontend", BASE_DIR.parent / "frontend") if d.exists()),
+    BASE_DIR / "frontend",
+)
 # Vercel functions only allow writes under /tmp.
 DATA_DIR = Path(os.environ.get("TRUTHLENS_DATA_DIR") or ("/tmp/truthlens-data" if os.environ.get("VERCEL") else BASE_DIR / "data"))
 CASES_DIR = DATA_DIR / "cases"
