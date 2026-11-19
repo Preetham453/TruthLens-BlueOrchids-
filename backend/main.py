@@ -1,6 +1,7 @@
 import hashlib
 import html
 import json
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,9 +24,15 @@ app.add_middleware(
 )
 
 BASE_DIR = Path(__file__).resolve().parent
-FRONTEND_DIR = BASE_DIR.parent / "frontend"
-CASES_DIR = BASE_DIR / "data" / "cases"
-UPLOADS_DIR = BASE_DIR / "data" / "uploads"
+# Lives inside backend/ so it is bundled when Vercel's root directory is backend/.
+FRONTEND_DIR = next(
+    (d for d in (BASE_DIR / "frontend", BASE_DIR.parent / "frontend") if d.exists()),
+    BASE_DIR / "frontend",
+)
+# Vercel functions only allow writes under /tmp.
+DATA_DIR = Path(os.environ.get("TRUTHLENS_DATA_DIR") or ("/tmp/truthlens-data" if os.environ.get("VERCEL") else BASE_DIR / "data"))
+CASES_DIR = DATA_DIR / "cases"
+UPLOADS_DIR = DATA_DIR / "uploads"
 CASES_DIR.mkdir(parents=True, exist_ok=True)
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
