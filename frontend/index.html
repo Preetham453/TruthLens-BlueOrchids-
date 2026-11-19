@@ -48,7 +48,20 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .brand-lockup {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-top {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
@@ -56,6 +69,22 @@
       margin: 0;
       font-size: 1.15rem;
       letter-spacing: 0.02em;
+      line-height: 1.15;
+    }
+
+    .powered-by {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #93c5fd;
+      letter-spacing: 0.04em;
+    }
+
+    .brand-tagline {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
 
     .badge {
@@ -262,7 +291,6 @@
     }
 
     .stage.done { border-color: rgba(16, 185, 129, 0.5); }
-    .stage.active { border-color: var(--blue-bright); box-shadow: 0 0 0 1px var(--blue-glow); }
     .stage .s-name { font-weight: 600; }
     .stage .s-state { color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
 
@@ -425,8 +453,14 @@
 <body>
   <header>
     <div class="brand">
-      <h1>TruthLens</h1>
-      <span class="badge">blueorchids Workbench</span>
+      <div class="brand-lockup">
+        <div class="brand-top">
+          <h1>TruthLens</h1>
+          <span class="powered-by">Powered by BLUEORCHIDS</span>
+        </div>
+        <span class="brand-tagline">CREATOR, DEVELOPER, DESIGNER</span>
+      </div>
+      <span class="badge">Forensic Workbench</span>
       <span id="modeBadge" class="badge">Connecting...</span>
     </div>
     <div class="row">
@@ -813,7 +847,7 @@
         backendOnline = true;
         badge.textContent = `Backend: ${data.status || "ok"}`;
         badge.className = "badge ok";
-        modeBadge.textContent = "blueorchids API Connected";
+        modeBadge.textContent = "BLUEORCHIDS API Connected";
         modeBadge.className = "badge ok";
       } catch {
         backendOnline = false;
@@ -1693,7 +1727,9 @@
         e.preventDefault();
         resetActiveCaseView();
         return;
-      }if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+      }
+
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
         if (keyLower === "i") {
           e.preventDefault();
           const inp = document.getElementById("caseIdInput");
