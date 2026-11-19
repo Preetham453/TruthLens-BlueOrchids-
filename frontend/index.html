@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TruthLens — Forensic Media &amp; Fraud Detection Workbench</title>
+  <style>
+    :root {
+      --bg: #070b12;
+      --panel: #0d1422;
+      --panel-2: #111b2e;
+      --border: #1e2d4a;
+      --text: #e6eefc;
+      --muted: #8fa4c8;
+      --blue: #2563eb;
+      --blue-bright: #3b82f6;
+      --blue-glow: rgba(37, 99, 235, 0.25);
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --bad-bg: rgba(239, 68, 68, 0.16);
+      --bad-border: rgba(239, 68, 68, 0.55);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      letter-spacing: 0.02em;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      background: rgba(37, 99, 235, 0.16);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+    }
+
+    .badge.ok {
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .badge.warn {
+      background: rgba(245, 158, 11, 0.16);
+      color: #fcd34d;
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+
+    .badge.fake {
+      background: var(--bad-bg);
+      color: #fca5a5;
+      border-color: var(--bad-border);
+      letter-spacing: 0.04em;
+    }
+
+    .container {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 16px 20px 44px;
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1020px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    .col-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 0.96rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .verdict-banner {
+      border-radius: 10px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .verdict-banner.fake {
+      background: linear-gradient(135deg, rgba(127, 29, 29, 0.42), rgba(13, 20, 34, 0.96));
+      border-color: var(--bad);
+      box-shadow: 0 0 24px rgba(239, 68, 68, 0.18);
+    }
+
+    .verdict-banner.authentic {
+      background: linear-gradient(135deg, rgba(6, 78, 59, 0.35), rgba(13, 20, 34, 0.96));
+      border-color: var(--ok);
+    }
+
+    .verdict-pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .verdict-pill.fake { background: var(--bad); color: #fff; }
+    .verdict-pill.authentic { background: var(--ok); color: #042f2e; }
+
+    .verdict-title { font-size: 1.08rem; font-weight: 700; margin: 0; }
+    .verdict-sub { font-size: 0.83rem; color: #cbd5e1; margin: 2px 0 0; }
+
+    .verdict-score-box { text-align: right; min-width: 130px; }
+    .verdict-score-box .k { font-size: 0.74rem; color: var(--muted); text-transform: uppercase; }
+    .verdict-score-box .v {
+      font-size: 1.65rem;
+      font-weight: 800;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    input[type="text"],
+    input[type="file"],
+    select,
+    textarea {
+      width: 100%;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 7px 10px;
+      font-size: 0.88rem;
+      margin-bottom: 10px;
+    }
+
+    textarea { min-height: 64px; resize: vertical; }
+
+    button {
+      background: var(--blue);
+      color: #fff;
+      border: 1px solid var(--blue-bright);
+      border-radius: 7px;
+      padding: 7px 12px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) { background: var(--blue-bright); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button.secondary {
+      background: var(--panel-2);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    button.secondary:hover:not(:disabled) { border-color: var(--blue-bright); }
+    button.danger {
+      background: rgba(239, 68, 68, 0.18);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+    button.danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.3); }
+
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .metric {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 10px;
+    }
+
+    .metric .k { font-size: 0.74rem; color: var(--muted); }
+    .metric .v { font-size: 1.22rem; font-weight: 700; margin-top: 2px; }
+
+    .pipeline-strip {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 760px) {
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .pipeline-strip { grid-template-columns: 1fr; }
+    }
+
+    .stage {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 9px;
+      font-size: 0.78rem;
+    }
+
+    .stage.done { border-color: rgba(16, 185, 129, 0.5); }
+    .stage.active { border-color: var(--blue-bright); box-shadow: 0 0 0 1px var(--blue-glow); }
+    .stage .s-name { font-weight: 600; }
+    .stage .s-state { color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
+
+    .player-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+    }
+
+    .timecode {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.84rem;
+      color: #93c5fd;
+      padding: 4px 8px;
+      background: #060a12;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    .monitor-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .monitor-grid { grid-template-columns: 1fr; }
+    }
+
+    .viewport-box {
+      background: #05080f;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .viewport-box canvas,
+    .viewport-box video {
+      width: 100%;
+      height: 215px;
+      display: block;
+      object-fit: cover;
+      background: #04070d;
+    }
+
+    .viewport-box video { display: none; }
+
+    .viewport-hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      font-size: 0.74rem;
+      background: #09101d;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .tracks-box { display: flex; flex-direction: column; gap: 8px; }
+    .track-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+    }
+
+    canvas.track-canvas {
+      width: 100%;
+      height: 106px;
+      background: #060a12;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: block;
+      cursor: pointer;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 145px 175px;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 720px) {
+      .toolbar { grid-template-columns: 1fr; }
+    }
+
+    .toolbar input,
+    .toolbar select { margin-bottom: 0; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    th, td {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    #indicatorsContainer tbody tr { cursor: pointer; transition: background-color 0.12s ease; }
+    #indicatorsContainer tbody tr:hover { background: rgba(37, 99, 235, 0.12); }
+    #indicatorsContainer tbody tr.row-selected {
+      background: rgba(37, 99, 235, 0.24);
+      box-shadow: inset 3px 0 0 var(--blue-bright);
+    }
+
+    .review-box {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+
+    .review-grid {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 10px;
+    }
+
+    @media (max-width: 720px) {
+      .review-grid { grid-template-columns: 1fr; }
+    }
+
+    .shortcut-list { display: flex; flex-direction: column; gap: 6px; font-size: 0.78rem; }
+    .shortcut-row { display: flex; justify-content: space-between; align-items: center; color: var(--muted); }
+    .kbd {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.73rem;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .empty { color: var(--muted); font-size: 0.85rem; padding: 6px 0; }
+    .status-msg { font-size: 0.8rem; color: var(--muted); margin-top: 6px; min-height: 16px; }
+    .status-msg.err { color: #fca5a5; }
+    .status-msg.ok { color: #6ee7b7; }
+    ul.clean { margin: 6px 0 0; padding-left: 18px; font-size: 0.83rem; }
+    ul.clean li { margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>TruthLens</h1>
+      <span class="badge">blueorchids Workbench</span>
+      <span id="modeBadge" class="badge">Connecting...</span>
+    </div>
+    <div class="row">
+      <label for="baseUrlInput" style="margin:0;">API Base</label>
+      <input id="baseUrlInput" type="text" value="" placeholder="(same origin)" style="width:200px;margin:0;" />
+      <span id="healthBadge" class="badge">Checking backend...</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="col-stack">
+      <section class="card">
+        <h2>
+          <span>Ingest &amp; Analyze</span>
+          <span class="badge">⌥I</span>
+        </h2>
+        <form id="analyzeForm">
+          <label for="caseIdInput">Case ID</label>
+          <input id="caseIdInput" name="case_id" type="text" placeholder="e.g. CASE-2026-0814" required />
+
+          <label for="claimInput">Claim / Allegation Summary</label>
+          <textarea id="claimInput" name="claim" placeholder="Describe the claim or suspected media manipulation..."></textarea>
+
+          <label for="filesInput">Evidence Files (Video / Audio / Image / Metadata)</label>
+          <input id="filesInput" name="files" type="file" multiple accept="video/*,audio/*,image/*,.json,.txt" />
+
+          <div class="row">
+            <button id="analyzeBtn" type="submit">Run Forensic Analysis</button>
+            <button id="openHtmlBtn" class="secondary" type="button" disabled>Export HTML</button>
+            <button id="resetCaseBtn" class="secondary" type="button">Clear</button>
+          </div>
+          <div id="analyzeStatus" class="status-msg"></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>
+          <span>Saved Cases</span>
+          <span class="badge">⌥C / ⌥L</span>
+        </h2>
+        <div class="row">
+          <select id="casesSelect">
+            <option value="">No saved cases</option>
+          </select>
+          <button id="loadCaseBtn" class="secondary" type="button">Load Case</button>
+        </div>
+        <div id="casesStatus" class="status-msg"></div>
+      </section>
+
+      <section class="card">
+        <h2>Mac Keyboard Shortcuts</h2>
+        <div class="shortcut-list">
+          <div class="shortcut-row"><span>Play / Pause Audio &amp; Video</span><span class="kbd">Space</span></div>
+          <div class="shortcut-row"><span>Search Indicators</span><span class="kbd">⌘K</span> / <span class="kbd">/</span></div>
+          <div class="shortcut-row"><span>Next / Prev Finding</span><span class="kbd">J</span> / <span class="kbd">K</span></div>
+          <div class="shortcut-row"><span>Focus Disposition / Note</span><span class="kbd">⌥D</span> / <span class="kbd">⌥N</span></div>
+          <div class="shortcut-row"><span>Save PATCH Disposition</span><span class="kbd">⌘↵</span></div>
+          <div class="shortcut-row"><span>Jump Ingest / Cases / Track</span><span class="kbd">⌥I</span> / <span class="kbd">⌥C</span> / <span class="kbd">⌥T</span></div>
+          <div class="shortcut-row"><span>Load Case / Health / Report</span><span class="kbd">⌥L</span> / <span class="kbd">⌥G</span> / <span class="kbd">⌥H</span></div>
+          <div class="shortcut-row"><span>Clear Filters / Reset Case</span><span class="kbd">Esc</span> / <span class="kbd">⌥⇧R</span></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="col-stack">
+      <section id="verdictBanner" class="verdict-banner fake">
+        <div>
+          <span id="verdictPill" class="verdict-pill fake">FAKE / FRAUD DETECTED</span>
+          <h3 id="verdictHeadline" class="verdict-title">Manipulated / Synthetic Media Detected</h3>
+          <p id="verdictDetail" class="verdict-sub">Ready for forensic media ingestion or saved case review.</p>
+        </div>
+        <div class="verdict-score-box">
+          <div class="k">Fraud Confidence</div>
+          <div id="verdictScore" class="v" style="color:var(--bad);">95%</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>
+          <span id="caseTitle">Active Case: CASE-2026-0814</span>
+          <span id="claimDisplay" class="badge">Claim: None</span>
+        </h2>
+
+        <div class="metrics">
+          <div class="metric"><div class="k">Evidence Items</div><div id="mEvidence" class="v">0</div></div>
+          <div class="metric"><div class="k">Total Indicators</div><div id="mIndicators" class="v">0</div></div>
+          <div class="metric"><div class="k">Fake / Fraud Flags</div><div id="mFakeFlags" class="v" style="color:var(--bad);">0</div></div>
+          <div class="metric"><div class="k">Correlations</div><div id="mCorrelations" class="v">0</div></div>
+        </div>
+
+        <div id="pipelineStrip" class="pipeline-strip"></div>
+
+        <h3 style="margin:10px 0 6px;font-size:0.88rem;color:var(--muted);">Evidence Queue &amp; Authenticity Classification</h3>
+        <div id="evidenceContainer" class="empty">No evidence loaded.</div>
+      </section>
+
+      <section class="card">
+        <h2>
+          <span>Visual Monitor &amp; Synchronized Video / Audio Fraud Tracker</span>
+          <span class="badge">⌥T</span>
+        </h2>
+
+        <div class="player-controls">
+          <button id="playPauseBtn" type="button">Play Video &amp; Audio</button>
+          <button id="muteToggleBtn" class="secondary" type="button">Audio: Unmuted</button>
+          <button id="nextFakeBtn" class="danger" type="button">Jump to Next Fake Anomaly</button>
+          <span id="timecodeDisplay" class="timecode">00:00.0 / 00:16.0</span>
+          <span id="liveDetectionAlert" class="badge fake">MONITORING</span>
+        </div>
+
+        <div class="monitor-grid">
+          <div class="viewport-box">
+            <video id="uploadedVideoEl" playsinline></video>
+            <audio id="uploadedAudioEl"></audio>
+            <canvas id="videoViewportCanvas" width="480" height="270"></canvas>
+            <div class="viewport-hud">
+              <span id="hudTrackLabel">FORENSIC STREAM</span>
+              <span id="hudStatusLabel">SCANNING FRAMES</span>
+            </div>
+          </div>
+
+          <div class="tracks-box">
+            <div class="track-header">
+              <div class="row">
+                <strong>Video Frame Timeline</strong>
+                <select id="videoTrackSelect" style="width:auto;margin:0;padding:4px 8px;font-size:0.78rem;"></select>
+              </div>
+              <span style="color:var(--muted);">30 fps · Timeline</span>
+            </div>
+            <canvas id="videoTimelineCanvas" class="track-canvas" width="760" height="106"></canvas>
+
+            <div class="track-header" style="margin-top:4px;">
+              <div class="row">
+                <strong>Audio Spectrogram &amp; Waveform</strong>
+                <select id="audioTrackSelect" style="width:auto;margin:0;padding:4px 8px;font-size:0.78rem;"></select>
+              </div>
+              <span style="color:var(--muted);">48 kHz · Spectrum</span>
+            </div>
+            <canvas id="audioSpectrogramCanvas" class="track-canvas" width="760" height="106"></canvas>
+          </div>
+        </div>
+
+        <div id="timelineMarkersList" class="empty" style="margin-top:8px;"></div>
+      </section>
+
+      <section class="card">
+        <h2>Forensic Indicators &amp; Fake / Fraud Classification</h2>
+        <div class="toolbar">
+          <input id="searchInput" type="text" placeholder="Search finding ID, FAKE label, location, signal..." />
+          <select id="modalityFilter">
+            <option value="">All Modalities</option>
+            <option value="video">video</option>
+            <option value="audio">audio</option>
+            <option value="metadata">metadata</option>
+            <option value="image">image</option>
+          </select>
+          <select id="dispositionFilter">
+            <option value="">All Dispositions</option>
+            <option value="Unreviewed">Unreviewed</option>
+            <option value="Confirmed Anomaly">Confirmed Anomaly</option>
+            <option value="Needs Second Review">Needs Second Review</option>
+            <option value="Benign Artifact">Benign Artifact</option>
+          </select>
+        </div>
+
+        <div id="indicatorsContainer" class="empty">No indicators available.</div>
+
+        <div class="review-box">
+          <h3 style="margin:0 0 8px;font-size:0.9rem;">Investigator Disposition (PATCH)</h3>
+          <div class="review-grid">
+            <div>
+              <label for="reviewFindingSelect">Target Finding ID</label>
+              <select id="reviewFindingSelect"></select>
+            </div>
+            <div>
+              <label for="reviewDispositionSelect">Disposition</label>
+              <select id="reviewDispositionSelect">
+                <option value="Unreviewed">Unreviewed</option>
+                <option value="Confirmed Anomaly">Confirmed Anomaly</option>
+                <option value="Needs Second Review">Needs Second Review</option>
+                <option value="Benign Artifact">Benign Artifact</option>
+              </select>
+            </div>
+          </div>
+          <label for="reviewNoteInput">Reviewer Note</label>
+          <textarea id="reviewNoteInput" placeholder="Record forensic verification notes..."></textarea>
+          <div class="row">
+            <button id="saveReviewBtn" type="button">Save Disposition</button>
+            <span id="reviewStatus" class="status-msg" style="margin:0;"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Cross-Evidence Correlations</h2>
+        <div id="correlationsContainer" class="empty">No correlations available.</div>
+      </section>
+
+      <section class="card">
+        <h2>Audit Log</h2>
+        <div id="auditContainer" class="empty">No audit events recorded.</div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    let currentReport = null;
+    let backendOnline = false;
+    let isPlaying = false;
+    let isMuted = false;
+    let playheadSec = 0;
+    let mediaDurationSec = 16.0;
+    let lastFrameTs = null;
+    let rafId = null;
+
+    let audioCtx = null;
+    let synthGain = null;
+    let synthOsc1 = null;
+    let synthOsc2 = null;
+    let uploadedVideoUrl = null;
+    let uploadedAudioUrl = null;
+
+    const STAGES = [
+      "1. Evidence Intake",
+      "2. Modality Extraction",
+      "3. Fake & Anomaly Analysis",
+      "4. Cross-Modal Correlation",
+      "5. Verdict & Audit Synthesis"
+    ];
+
+    const DEMO_CASES = {
+      "CASE-2026-0814": {
+        case_id: "CASE-2026-0814",
+        claim: "Alleged CFO video call authorizing $480,000 urgent wire transfer",
+        pipeline_stages: STAGES.map(name => ({ name, status: "completed" })),
+        evidence: [
+          {
+            evidence_id: "EV-VID-01",
+            filename: "cfo_call_recording.mp4",
+            media_type: "video",
+            size_bytes: 18429104,
+            sha256: "9f84c2a17b3e40d8912a6c55e10984f3b7c12a9e00412d88f31c66a9012e4b71",
+            duration_sec: 16.0,
+            metadata: { codec: "H.264", fps: "30" }
+          },
+          {
+            evidence_id: "EV-AUD-02",
+            filename: "cfo_voice_isolated.wav",
+            media_type: "audio",
+            size_bytes: 3072440,
+            sha256: "4e11d8a93f20c77b15e84a90d312c88b71a04f92e63d518c29f04b77a12c3e90",
+            duration_sec: 16.0,
+            metadata: { sample_rate: "48000 Hz" }
+          }
+        ],
+        indicators: [
+          {
+            finding_id: "F-001",
+            evidence_id: "EV-VID-01",
+            modality: "video",
+            location: "00:04.2 (Frames 120-168)",
+            timestamp_sec: 4.2,
+            bbox: { x: 0.34, y: 0.22, w: 0.32, h: 0.44 },
+            signal_summary: "FAKE FACE-SWAP: Jawline blending seam & GAN texture flicker during head turn",
+            calibrated_confidence: 0.94,
+            fraud_label: "FAKE",
+            disposition: "Confirmed Anomaly",
+            reviewer_note: "Clear boundary warping around lower chin."
+          },
+          {
+            finding_id: "F-002",
+            evidence_id: "EV-AUD-02",
+            modality: "audio",
+            location: "00:07.5 (7.2s - 8.9s)",
+            timestamp_sec: 7.5,
+            bbox: { x: 0.36, y: 0.26, w: 0.28, h: 0.38 },
+            signal_summary: "FAKE VOICE CLONE: Neural vocoder harmonic cutoff above 7.6 kHz",
+            calibrated_confidence: 0.95,
+            fraud_label: "FAKE",
+            disposition: "Confirmed Anomaly",
+            reviewer_note: "Matches TTS splice on wire account digits."
+          }
+        ],
+        correlations: [
+          {
+            correlation_id: "CORR-01",
+            relation: "AUDIO_VIDEO_DEEPFAKE_MATCH",
+            score: 0.96,
+            summary: "Voice-clone splice aligns with facial reenactment artifacts."
+          }
+        ],
+        audit_log: [
+          { timestamp: "2026-11-19T10:14:02Z", action: "INIT_DEMO", detail: "Loaded baseline forensic case." }
+        ]
+      }
+    };
+
+    function getBaseUrl() {
+      return (document.getElementById("baseUrlInput").value || "").trim().replace(/\/+$/, "");
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function formatSec(sec) {
+      const s = Math.max(0, Number(sec) || 0);
+      const mins = Math.floor(s / 60);
+      const rem = (s % 60).toFixed(1).padStart(4, "0");
+      return `${String(mins).padStart(2, "0")}:${rem}`;
+    }
+
+    function isFakeIndicator(ind) {
+      const conf = Number(ind?.calibrated_confidence ?? 0);
+      const disp = String(ind?.disposition || "");
+      const lbl = String(ind?.fraud_label || "").toUpperCase();
+      if (disp === "Benign Artifact") return false;
+      return lbl === "FAKE" || disp === "Confirmed Anomaly" || conf >= 0.70;
+    }
+
+    function parseTimestampSec(ind, idx = 0, total = 1) {
+      if (typeof ind.timestamp_sec === "number" && !Number.isNaN(ind.timestamp_sec)) return ind.timestamp_sec;
+      const loc = String(ind.location || "");
+      const m = loc.match(/(\d+):(\d+(?:\.\d+)?)/);
+      if (m) return parseInt(m[1], 10) * 60 + parseFloat(m[2]);
+      return ((idx + 1) / (total + 1)) * mediaDurationSec;
+    }
+
+    function normalizeReportPayload(raw, fallbackReport = null) {
+      if (!raw || typeof raw !== "object") return fallbackReport;
+      const root = raw.report || raw.case || raw.data || raw;
+      const base = fallbackReport || {};
+
+      const evidence = (root.evidence || base.evidence || []).map((ev, idx) => ({
+        evidence_id: ev.evidence_id || `EV-${idx + 1}`,
+        filename: ev.filename || "evidence_file",
+        media_type: ev.media_type || "video",
+        size_bytes: ev.size_bytes ?? 0,
+        sha256: ev.sha256 || "",
+        duration_sec: Number(ev.duration_sec || 16.0),
+        metadata: ev.metadata || {}
+      }));
+
+      const rawIndicators = root.indicators || root.findings || base.indicators || [];
+      const indicators = rawIndicators.map((ind, idx) => {
+        const conf = Number(ind.calibrated_confidence ?? ind.confidence ?? 0);
+        return {
+          finding_id: ind.finding_id || `F-${String(idx + 1).padStart(3, "0")}`,
+          evidence_id: ind.evidence_id || (evidence[0]?.evidence_id || ""),
+          modality: ind.modality || "video",
+          location: ind.location || `00:${String((idx + 1) * 3).padStart(2, "0")}.0`,
+          timestamp_sec: parseTimestampSec(ind, idx, rawIndicators.length),
+          bbox: ind.bbox || { x: 0.34, y: 0.24, w: 0.32, h: 0.42 },
+          signal_summary: ind.signal_summary || ind.summary || "Forensic anomaly detected",
+          calibrated_confidence: conf,
+          fraud_label: ind.fraud_label || (conf >= 0.7 ? "FAKE" : "SUSPICIOUS"),
+          disposition: ind.disposition || "Unreviewed",
+          reviewer_note: ind.reviewer_note ?? ""
+        };
+      });
+
+      return {
+        case_id: root.case_id || base.case_id || "CASE-UNTITLED",
+        claim: root.claim ?? base.claim ?? "",
+        pipeline_stages: root.pipeline_stages || base.pipeline_stages || [],
+        evidence,
+        indicators,
+        correlations: root.correlations || base.correlations || [],
+        audit_log: root.audit_log || base.audit_log || []
+      };
+    }
+
+    async function checkHealth() {
+      const badge = document.getElementById("healthBadge");
+      const modeBadge = document.getElementById("modeBadge");
+      try {
+        const res = await fetch(`${getBaseUrl()}/health`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        backendOnline = true;
+        badge.textContent = `Backend: ${data.status || "ok"}`;
+        badge.className = "badge ok";
+        modeBadge.textContent = "blueorchids API Connected";
+        modeBadge.className = "badge ok";
+      } catch {
+        backendOnline = false;
+        badge.textContent = "Backend: Offline (Local Mode)";
+        badge.className = "badge warn";
+        modeBadge.textContent = "Standalone Local Mode";
+        modeBadge.className = "badge";
+      }
+    }
+
+    function ensureAudioSynth() {
+      if (audioCtx) return;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      audioCtx = new AudioContextClass();
+      synthGain = audioCtx.createGain();
+      synthGain.gain.value = 0;
+
+      synthOsc1 = audioCtx.createOscillator();
+      synthOsc2 = audioCtx.createOscillator();
+      synthOsc1.type = "sawtooth";
+      synthOsc2.type = "triangle";
+      synthOsc1.frequency.value = 145;
+      synthOsc2.frequency.value = 290;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = 680;
+      filter.Q.value = 2.4;
+
+      synthOsc1.connect(filter);
+      synthOsc2.connect(filter);
+      filter.connect(synthGain);
+      synthGain.connect(audioCtx.destination);
+
+      synthOsc1.start();
+      synthOsc2.start();
+    }
+
+    function updateSynthSound(t, nearFake) {
+      if (!audioCtx || !synthGain) return;
+      if (!isPlaying || isMuted || uploadedVideoUrl || uploadedAudioUrl) {
+        synthGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.03);
+        return;
+      }
+      const syllable = Math.max(0, Math.sin(t * 9.5)) * (0.5 + 0.5 * Math.cos(t * 3.1));
+      const pitch = nearFake ? 215 + Math.sin(t * 48) * 65 : 138 + Math.sin(t * 4.2) * 24;
+      synthOsc1.frequency.setTargetAtTime(pitch, audioCtx.currentTime, 0.02);
+      synthOsc2.frequency.setTargetAtTime(pitch * 2.02, audioCtx.currentTime, 0.02);
+      synthGain.gain.setTargetAtTime(syllable * (nearFake ? 0.14 : 0.07), audioCtx.currentTime, 0.025);
+    }
+
+    function togglePlayPause() {
+      const btn = document.getElementById("playPauseBtn");
+      const vidEl = document.getElementById("uploadedVideoEl");
+      const audEl = document.getElementById("uploadedAudioEl");
+
+      isPlaying = !isPlaying;
+      btn.textContent = isPlaying ? "Pause Video & Audio" : "Play Video & Audio";
+
+      if (isPlaying) {
+        ensureAudioSynth();
+        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+        if (uploadedVideoUrl) {
+          vidEl.muted = isMuted;
+          vidEl.currentTime = playheadSec;
+          vidEl.play().catch(() => {});
+        }
+        if (uploadedAudioUrl) {
+          audEl.muted = isMuted;
+          audEl.currentTime = playheadSec;
+          audEl.play().catch(() => {});
+        }
+        lastFrameTs = performance.now();
+        rafId = requestAnimationFrame(playbackLoop);
+      } else {
+        if (rafId) cancelAnimationFrame(rafId);
+        if (uploadedVideoUrl) vidEl.pause();
+        if (uploadedAudioUrl) audEl.pause();
+        updateSynthSound(playheadSec, false);
+      }
+    }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      document.getElementById("muteToggleBtn").textContent = isMuted ? "Audio: Muted" : "Audio: Unmuted";
+      document.getElementById("uploadedVideoEl").muted = isMuted;
+      document.getElementById("uploadedAudioEl").muted = isMuted;
+      if (isMuted) updateSynthSound(playheadSec, false);
+    }
+
+    function seekToTime(sec) {
+      playheadSec = Math.max(0, Math.min(mediaDurationSec, sec));
+      const vidEl = document.getElementById("uploadedVideoEl");
+      const audEl = document.getElementById("uploadedAudioEl");
+      if (uploadedVideoUrl && Number.isFinite(vidEl.duration)) {
+        vidEl.currentTime = Math.min(vidEl.duration, playheadSec);
+      }
+      if (uploadedAudioUrl && Number.isFinite(audEl.duration)) {
+        audEl.currentTime = Math.min(audEl.duration, playheadSec);
+      }
+      renderVisualAndTracks();
+    }
+
+    function playbackLoop(now) {
+      if (!isPlaying) return;
+      const dt = lastFrameTs ? (now - lastFrameTs) / 1000 : 0.016;
+      lastFrameTs = now;
+
+      const vidEl = document.getElementById("uploadedVideoEl");
+      if (uploadedVideoUrl && !vidEl.paused && Number.isFinite(vidEl.duration)) {
+        mediaDurationSec = vidEl.duration || mediaDurationSec;
+        playheadSec = vidEl.currentTime;
+      } else {
+        playheadSec += dt;
+        if (playheadSec >= mediaDurationSec) playheadSec = 0;
+      }
+
+      renderVisualAndTracks();
+      rafId = requestAnimationFrame(playbackLoop);
+    }
+
+    function updateVerdictBanner(report) {
+      const banner = document.getElementById("verdictBanner");
+      const pill = document.getElementById("verdictPill");
+      const headline = document.getElementById("verdictHeadline");
+      const detail = document.getElementById("verdictDetail");
+      const scoreEl = document.getElementById("verdictScore");
+
+      const indicators = (report && report.indicators) || [];
+      const fakeList = indicators.filter(isFakeIndicator);
+      const maxConf = fakeList.reduce((m, i) => Math.max(m, Number(i.calibrated_confidence || 0)), 0);
+
+      if (fakeList.length > 0) {
+        banner.className = "verdict-banner fake";
+        pill.className = "verdict-pill fake";
+        pill.textContent = `FAKE / FRAUD DETECTED (${fakeList.length} FLAG${fakeList.length > 1 ? "S" : ""})`;
+        headline.textContent = "Manipulated / Synthetic Media Detected";
+        detail.textContent = fakeList
+          .slice(0, 2)
+          .map(f => `[${f.modality.toUpperCase()} @ ${f.location}] ${f.signal_summary}`)
+          .join(" • ");
+        scoreEl.textContent = `${Math.round(maxConf * 100)}%`;
+        scoreEl.style.color = "var(--bad)";
+      } else {
+        banner.className = "verdict-banner authentic";
+        pill.className = "verdict-pill authentic";
+        pill.textContent = "AUTHENTIC / NO FRAUD FLAGS";
+        headline.textContent = "No Synthetic or Splicing Manipulation Flagged";
+        detail.textContent = "All analyzed video frames, audio frequencies, and container headers passed integrity checks.";
+        scoreEl.textContent = "0%";
+        scoreEl.style.color = "var(--ok)";
+      }
+    }
+
+    function renderPipelineStages(stages) {
+      const strip = document.getElementById("pipelineStrip");
+      const list = (stages && stages.length) ? stages : STAGES.map(name => ({ name, status: "completed" }));
+      strip.innerHTML = list.map((st, idx) => `
+        <div class="stage done">
+          <div class="s-name">${escapeHtml(st.name || STAGES[idx])}</div>
+          <div class="s-state">${escapeHtml(st.status || "completed")}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderEvidence(items, indicators) {
+      const el = document.getElementById("evidenceContainer");
+      if (!items || !items.length) {
+        el.innerHTML = '<div class="empty">No evidence loaded.</div>';
+        return;
+      }
+      el.innerHTML = `
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Filename</th><th>Modality</th><th>Verdict Label</th><th>SHA-256</th></tr>
+          </thead>
+          <tbody>
+            ${items.map(ev => {
+              const hasFake = (indicators || []).some(i => i.evidence_id === ev.evidence_id && isFakeIndicator(i));
+              const verdictBadge = hasFake
+                ? '<span class="badge fake">FAKE / FRAUD</span>'
+                : '<span class="badge ok">AUTHENTIC</span>';
+              return `
+                <tr>
+                  <td><strong>${escapeHtml(ev.evidence_id)}</strong></td>
+                  <td>${escapeHtml(ev.filename)}</td>
+                  <td><span class="badge">${escapeHtml(ev.media_type)}</span></td>
+                  <td>${verdictBadge}</td>
+                  <td><code>${escapeHtml(String(ev.sha256 || "").slice(0, 14))}...</code></td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderVisualAndTracks() {
+      if (!currentReport) return;
+
+      const indicators = currentReport.indicators || [];
+      const activeFindingId = document.getElementById("reviewFindingSelect")?.value || "";
+      const videoEvId = document.getElementById("videoTrackSelect")?.value || "";
+      const audioEvId = document.getElementById("audioTrackSelect")?.value || "";
+
+      document.getElementById("timecodeDisplay").textContent =
+        `${formatSec(playheadSec)} / ${formatSec(mediaDurationSec)}`;
+
+      const activeFakeAtPlayhead = indicators.find(ind =>
+        isFakeIndicator(ind) && Math.abs((ind.timestamp_sec ?? 0) - playheadSec) <= 1.15
+      );
+
+      updateSynthSound(playheadSec, Boolean(activeFakeAtPlayhead));
+
+      const alertBadge = document.getElementById("liveDetectionAlert");
+      const hudStatus = document.getElementById("hudStatusLabel");
+      if (activeFakeAtPlayhead) {
+        alertBadge.className = "badge fake";
+        alertBadge.textContent = `FAKE DETECTED: ${activeFakeAtPlayhead.finding_id} (${Math.round(activeFakeAtPlayhead.calibrated_confidence * 100)}%)`;
+        hudStatus.textContent = `FAKE REGION @ ${formatSec(playheadSec)}`;
+        hudStatus.style.color = "#fca5a5";
+      } else {
+        alertBadge.className = "badge ok";
+        alertBadge.textContent = "SCANNING TRACKS";
+        hudStatus.textContent = `PLAYHEAD ${formatSec(playheadSec)}`;
+        hudStatus.style.color = "#93c5fd";
+      }
+
+      const vCanvas = document.getElementById("videoViewportCanvas");
+      const vCtx = vCanvas.getContext("2d");
+      const w = vCanvas.width;
+      const h = vCanvas.height;
+
+      vCtx.fillStyle = "#060b14";
+      vCtx.fillRect(0, 0, w, h);
+
+      if (!uploadedVideoUrl) {
+        const grad = vCtx.createRadialGradient(w * 0.5, h * 0.45, 20, w * 0.5, h * 0.5, 220);
+        grad.addColorStop(0, "#152544");
+        grad.addColorStop(1, "#060b14");
+        vCtx.fillStyle = grad;
+        vCtx.fillRect(0, 0, w, h);
+
+        vCtx.fillStyle = "rgba(59, 130, 246, 0.05)";
+        for (let y = 0; y < h; y += 4) vCtx.fillRect(0, y, w, 1);
+
+        const headX = w * 0.5 + Math.sin(playheadSec * 1.6) * 8;
+        const headY = h * 0.44 + Math.cos(playheadSec * 2.1) * 3;
+        vCtx.strokeStyle = "#3b82f6";
+        vCtx.lineWidth = 2;
+        vCtx.beginPath();
+        vCtx.ellipse(headX, headY, 48, 62, 0, 0, Math.PI * 2);
+        vCtx.stroke();
+
+        vCtx.fillStyle = "#93c5fd";
+        vCtx.fillRect(headX - 20, headY - 14, 10, 4);
+        vCtx.fillRect(headX + 10, headY - 14, 10, 4);
+        const mouthOpen = isPlaying ? Math.abs(Math.sin(playheadSec * 11)) * 10 + 2 : 3;
+        vCtx.strokeStyle = activeFakeAtPlayhead ? "#ef4444" : "#60a5fa";
+        vCtx.strokeRect(headX - 15, headY + 20, 30, mouthOpen);
+
+        vCtx.fillStyle = "#8fa4c8";
+        vCtx.font = "11px ui-monospace, monospace";
+        vCtx.fillText(`FRAME #${Math.floor(playheadSec * 30)} · ${formatSec(playheadSec)}`, 12, 20);
+      }
+
+      if (activeFakeAtPlayhead) {
+        const box = activeFakeAtPlayhead.bbox || { x: 0.34, y: 0.22, w: 0.32, h: 0.44 };
+        const bx = box.x * w;
+        const by = box.y * h;
+        const bw = box.w * w;
+        const bh = box.h * h;
+
+        vCtx.save();
+        vCtx.strokeStyle = "#ef4444";
+        vCtx.lineWidth = 2.5;
+        vCtx.setLineDash([6, 4]);
+        vCtx.strokeRect(bx, by, bw, bh);
+        vCtx.setLineDash([]);
+
+        vCtx.fillStyle = "rgba(239, 68, 68, 0.88)";
+        vCtx.fillRect(bx, Math.max(4, by - 20), Math.min(w - bx - 4, 210), 18);
+        vCtx.fillStyle = "#ffffff";
+        vCtx.font = "bold 11px ui-monospace, monospace";
+        vCtx.fillText(
+          `FAKE (${Math.round(activeFakeAtPlayhead.calibrated_confidence * 100)}%) · ${activeFakeAtPlayhead.finding_id}`,
+          bx + 6,
+          Math.max(16, by - 7)
+        );
+        vCtx.restore();
+      }
+
+      drawTrackCanvas({
+        canvasId: "videoTimelineCanvas",
+        mode: "video",
+        indicators: indicators.filter(i => !videoEvId || i.evidence_id === videoEvId || i.modality === "video"),
+        activeFindingId
+      });
+
+      drawTrackCanvas({
+        canvasId: "audioSpectrogramCanvas",
+        mode: "audio",
+        indicators: indicators.filter(i => !audioEvId || i.evidence_id === audioEvId || i.modality === "audio"),
+        activeFindingId
+      });
+
+      const markersBox = document.getElementById("timelineMarkersList");
+      if (!indicators.length) {
+        markersBox.innerHTML = '<div class="empty">No timeline markers.</div>';
+      } else {
+        markersBox.innerHTML = `<div class="row">${indicators.map(ind => {
+          const fake = isFakeIndicator(ind);
+          const selected = ind.finding_id === activeFindingId;
+          return `
+            <button
+              type="button"
+              class="${fake ? "danger" : "secondary"}"
+              style="${selected ? "outline:2px solid #38bdf8;" : ""}"
+              onclick="jumpToFinding('${escapeHtml(ind.finding_id)}')"
+            >
+              ${fake ? "FAKE" : "INFO"} · ${escapeHtml(ind.finding_id)} @ ${formatSec(ind.timestamp_sec)}
+            </button>
+          `;
+        }).join("")}</div>`;
+      }
+    }
+
+    function drawTrackCanvas({ canvasId, mode, indicators, activeFindingId }) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#060a12";
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.strokeStyle = "#162238";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 60) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+
+      if (mode === "video") {
+        const cellW = 38;
+        for (let x = 8; x < w - 10; x += cellW) {
+          const tAtCell = (x / w) * mediaDurationSec;
+          const nearFake = indicators.some(i => isFakeIndicator(i) && Math.abs((i.timestamp_sec ?? 0) - tAtCell) < 0.9);
+          ctx.fillStyle = nearFake ? "rgba(239, 68, 68, 0.22)" : "rgba(37, 99, 235, 0.14)";
+          ctx.fillRect(x, 26, cellW - 4, h - 38);
+          ctx.strokeStyle = nearFake ? "rgba(239, 68, 68, 0.55)" : "#1e2d4a";
+          ctx.strokeRect(x, 26, cellW - 4, h - 38);
+        }
+      } else {
+        const bars = 96;
+        const step = w / bars;
+        for (let i = 0; i < bars; i++) {
+          const tAtBar = (i / bars) * mediaDurationSec;
+          const nearFake = indicators.some(ind => isFakeIndicator(ind) && Math.abs((ind.timestamp_sec ?? 0) - tAtBar) < 0.9);
+          const amp = 14 + Math.abs(Math.sin(i * 0.45) * Math.cos(i * 0.19)) * (h - 44);
+          ctx.fillStyle = nearFake ? "rgba(239, 68, 68, 0.72)" : "rgba(59, 130, 246, 0.55)";
+          ctx.fillRect(i * step + 1, h - 10 - amp, Math.max(2, step - 2), amp);
+        }
+      }
+
+      indicators.forEach(ind => {
+        const ratio = Math.max(0, Math.min(1, (ind.timestamp_sec ?? 0) / Math.max(0.1, mediaDurationSec)));
+        const x = 14 + ratio * (w - 28);
+        const fake = isFakeIndicator(ind);
+        const isSel = ind.finding_id === activeFindingId;
+
+        ctx.save();
+        ctx.strokeStyle = fake ? "#ef4444" : "#38bdf8";
+        ctx.lineWidth = isSel ? 3 : 1.8;
+        ctx.beginPath();
+        ctx.moveTo(x, 18);
+        ctx.lineTo(x, h - 6);
+        ctx.stroke();
+
+        ctx.fillStyle = fake ? "#ef4444" : "#3b82f6";
+        ctx.fillRect(Math.min(x - 2, w - 92), 4, 88, 15);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 10px ui-monospace, monospace";
+        ctx.fillText(`${fake ? "FAKE" : "NOTE"} ${ind.finding_id}`, Math.min(x + 2, w - 88), 15);
+        ctx.restore();
+      });
+
+      const playX = 14 + Math.max(0, Math.min(1, playheadSec / Math.max(0.1, mediaDurationSec))) * (w - 28);
+      ctx.strokeStyle = "#f8fafc";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(playX, 0);
+      ctx.lineTo(playX, h);
+      ctx.stroke();
+    }
+
+    function populateTrackSelectors(evidence) {
+      const vSel = document.getElementById("videoTrackSelect");
+      const aSel = document.getElementById("audioTrackSelect");
+      vSel.innerHTML = "";
+      aSel.innerHTML = "";
+
+      const items = evidence || [];
+      if (!items.length) {
+        vSel.innerHTML = '<option value="">No video track</option>';
+        aSel.innerHTML = '<option value="">No audio track</option>';
+        return;
+      }
+
+      items.forEach(ev => {
+        const optV = document.createElement("option");
+        optV.value = ev.evidence_id;
+        optV.textContent = `${ev.evidence_id} (${ev.filename})`;
+        vSel.appendChild(optV);
+
+        const optA = document.createElement("option");
+        optA.value = ev.evidence_id;
+        optA.textContent = `${ev.evidence_id} (${ev.filename})`;
+        aSel.appendChild(optA);
+      });
+
+      const firstVid = items.find(e => e.media_type === "video") || items[0];
+      const firstAud = items.find(e => e.media_type === "audio") || items[0];
+      vSel.value = firstVid.evidence_id;
+      aSel.value = firstAud.evidence_id;
+    }
+
+    function renderIndicators(indicators) {
+      const container = document.getElementById("indicatorsContainer");
+      const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+      const mod = document.getElementById("modalityFilter").value;
+      const disp = document.getElementById("dispositionFilter").value;
+
+      const filtered = (indicators || []).filter(ind => {
+        if (mod && ind.modality !== mod) return false;
+        if (disp && (ind.disposition || "Unreviewed") !== disp) return false;
+        if (q) {
+          const lbl = isFakeIndicator(ind) ? "fake fraud" : "authentic";
+          const hay = `${ind.finding_id} ${ind.evidence_id} ${ind.location} ${ind.signal_summary} ${ind.reviewer_note || ""} ${lbl}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      if (!filtered.length) {
+        container.innerHTML = '<div class="empty">No matching indicators.</div>';
+        return;
+      }
+
+      const selectedId = document.getElementById("reviewFindingSelect")?.value || "";
+
+      container.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Finding</th><th>Label</th><th>Modality</th><th>Location</th>
+              <th>Signal Summary</th><th>Conf.</th><th>Disposition</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(ind => {
+              const isSelected = ind.finding_id === selectedId;
+              const fake = isFakeIndicator(ind);
+              return `
+                <tr
+                  data-finding-id="${escapeHtml(ind.finding_id)}"
+                  class="${isSelected ? "row-selected" : ""}"
+                  onclick="jumpToFinding('${escapeHtml(ind.finding_id)}')"
+                >
+                  <td><strong>${escapeHtml(ind.finding_id)}</strong><br><span style="color:var(--muted);font-size:0.75rem;">${escapeHtml(ind.evidence_id)}</span></td>
+                  <td>${fake ? '<span class="badge fake">FAKE / FRAUD</span>' : '<span class="badge">SUSPICIOUS</span>'}</td>
+                  <td><span class="badge">${escapeHtml(ind.modality)}</span></td>
+                  <td><code>${escapeHtml(ind.location)}</code></td>
+                  <td>${escapeHtml(ind.signal_summary)}</td>
+                  <td><strong>${Number(ind.calibrated_confidence ?? 0).toFixed(2)}</strong></td>
+                  <td><span class="badge">${escapeHtml(ind.disposition || "Unreviewed")}</span></td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function populateReviewSelector(indicators, preferredId = "") {
+      const sel = document.getElementById("reviewFindingSelect");
+      const saveBtn = document.getElementById("saveReviewBtn");
+      sel.innerHTML = "";
+
+      if (!indicators || !indicators.length) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "No findings available";
+        sel.appendChild(opt);
+        saveBtn.disabled = true;
+        return;
+      }
+
+      indicators.forEach(ind => {
+        const opt = document.createElement("option");
+        opt.value = ind.finding_id;
+        opt.textContent = `${ind.finding_id} [${isFakeIndicator(ind) ? "FAKE" : "INFO"}] (${ind.modality} · ${ind.location})`;
+        sel.appendChild(opt);
+      });
+
+      if (preferredId && indicators.some(i => i.finding_id === preferredId)) {
+        sel.value = preferredId;
+      }
+      saveBtn.disabled = false;
+      syncReviewInputsFromSelected();
+    }
+
+    function syncReviewInputsFromSelected() {
+      if (!currentReport) return;
+      const fid = document.getElementById("reviewFindingSelect").value;
+      const ind = (currentReport.indicators || []).find(i => i.finding_id === fid);
+      if (!ind) return;
+      document.getElementById("reviewDispositionSelect").value = ind.disposition || "Unreviewed";
+      document.getElementById("reviewNoteInput").value = ind.reviewer_note || "";
+
+      document.querySelectorAll("#indicatorsContainer tbody tr[data-finding-id]").forEach(tr => {
+        tr.classList.toggle("row-selected", tr.getAttribute("data-finding-id") === fid);
+      });
+      renderVisualAndTracks();
+    }
+
+    function jumpToFinding(findingId) {
+      const sel = document.getElementById("reviewFindingSelect");
+      if (!sel || !findingId || !currentReport) return;
+      sel.value = findingId;
+      syncReviewInputsFromSelected();
+      const ind = (currentReport.indicators || []).find(i => i.finding_id === findingId);
+      if (ind && typeof ind.timestamp_sec === "number") seekToTime(ind.timestamp_sec);
+    }
+
+    function jumpToNextFakeAnomaly() {
+      if (!currentReport) return;
+      const fakes = (currentReport.indicators || [])
+        .filter(isFakeIndicator)
+        .sort((a, b) => (a.timestamp_sec ?? 0) - (b.timestamp_sec ?? 0));
+      if (!fakes.length) return;
+      const next = fakes.find(f => (f.timestamp_sec ?? 0) > playheadSec + 0.25) || fakes[0];
+      jumpToFinding(next.finding_id);
+    }
+
+    function stepReviewFinding(delta) {
+      const sel = document.getElementById("reviewFindingSelect");
+      if (!sel || sel.options.length === 0) return;
+      const total = sel.options.length;
+      const currentIdx = sel.selectedIndex >= 0 ? sel.selectedIndex : 0;
+      sel.selectedIndex = (currentIdx + delta + total) % total;
+      jumpToFinding(sel.value);
+    }
+
+    function renderCorrelations(correlations) {
+      const el = document.getElementById("correlationsContainer");
+      if (!correlations || !correlations.length) {
+        el.innerHTML = '<div class="empty">No correlations available.</div>';
+        return;
+      }
+      el.innerHTML = `<ul class="clean">${correlations.map(c => `
+        <li><strong>${escapeHtml(c.correlation_id || "CORR")}</strong> (${escapeHtml(c.relation || "")}, score <strong>${Number(c.score ?? 0).toFixed(2)}</strong>): ${escapeHtml(c.summary || "")}</li>
+      `).join("")}</ul>`;
+    }
+
+    function renderAuditLog(events) {
+      const el = document.getElementById("auditContainer");
+      if (!events || !events.length) {
+        el.innerHTML = '<div class="empty">No audit events recorded.</div>';
+        return;
+      }
+      el.innerHTML = `<ul class="clean">${events.map(ev => `
+        <li><code>${escapeHtml(ev.timestamp || "")}</code> — <strong>${escapeHtml(ev.action || "")}</strong>: ${escapeHtml(ev.detail || "")}</li>
+      `).join("")}</ul>`;
+    }
+
+    function renderReport(report, preferredFindingId = "") {
+      currentReport = report;
+      const indicators = report.indicators || [];
+      const fakeCount = indicators.filter(isFakeIndicator).length;
+
+      mediaDurationSec = Math.max(
+        8.0,
+        ...(report.evidence || []).map(e => Number(e.duration_sec || 16.0)),
+        ...indicators.map(i => Number(i.timestamp_sec || 0) + 2.0)
+      );
+
+      document.getElementById("caseTitle").textContent = `Active Case: ${report.case_id}`;
+      document.getElementById("claimDisplay").textContent = `Claim: ${report.claim || "None"}`;
+      document.getElementById("mEvidence").textContent = String((report.evidence || []).length);
+      document.getElementById("mIndicators").textContent = String(indicators.length);
+      document.getElementById("mFakeFlags").textContent = String(fakeCount);
+      document.getElementById("mCorrelations").textContent = String((report.correlations || []).length);
+      document.getElementById("openHtmlBtn").disabled = !report.case_id;
+
+      updateVerdictBanner(report);
+      renderPipelineStages(report.pipeline_stages || []);
+      renderEvidence(report.evidence || [], indicators);
+      populateTrackSelectors(report.evidence || []);
+      populateReviewSelector(indicators, preferredFindingId);
+      renderIndicators(indicators);
+      renderCorrelations(report.correlations || []);
+      renderAuditLog(report.audit_log || []);
+      renderVisualAndTracks();
+    }
+
+    function resetActiveCaseView() {
+      if (isPlaying) togglePlayPause();
+      playheadSec = 0;
+      currentReport = null;
+
+      if (uploadedVideoUrl) { URL.revokeObjectURL(uploadedVideoUrl); uploadedVideoUrl = null; }
+      if (uploadedAudioUrl) { URL.revokeObjectURL(uploadedAudioUrl); uploadedAudioUrl = null; }
+      const vidEl = document.getElementById("uploadedVideoEl");
+      vidEl.style.display = "none";
+      vidEl.removeAttribute("src");
+      document.getElementById("videoViewportCanvas").style.display = "block";
+
+      document.getElementById("analyzeForm").reset();
+      document.getElementById("searchInput").value = "";
+      document.getElementById("modalityFilter").value = "";
+      document.getElementById("dispositionFilter").value = "";
+      document.getElementById("caseTitle").textContent = "Active Case: None Loaded";
+      document.getElementById("claimDisplay").textContent = "Claim: None";
+      document.getElementById("mEvidence").textContent = "0";
+      document.getElementById("mIndicators").textContent = "0";
+      document.getElementById("mFakeFlags").textContent = "0";
+      document.getElementById("mCorrelations").textContent = "0";
+      document.getElementById("openHtmlBtn").disabled = true;
+
+      renderEvidence([], []);
+      renderIndicators([]);
+      populateReviewSelector([]);
+      renderCorrelations([]);
+      renderAuditLog([]);
+    }
+
+    async function loadCasesList() {
+      const sel = document.getElementById("casesSelect");
+      const status = document.getElementById("casesStatus");
+      try {
+        const res = await fetch(`${getBaseUrl()}/cases`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const cases = data.cases || [];
+        sel.innerHTML = "";
+        if (!cases.length) {
+          const opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = "No saved backend cases";
+          sel.appendChild(opt);
+          status.textContent = "No saved cases on backend yet.";
+          return;
+        }
+        cases.forEach(c => {
+          const slug = typeof c === "string" ? c : (c.slug || c.case_id);
+          const opt = document.createElement("option");
+          opt.value = slug;
+          opt.textContent = `${c.case_id || slug} (${c.indicator_count ?? 0} ind.)`;
+          sel.appendChild(opt);
+        });
+        status.textContent = `Loaded ${cases.length} saved case(s).`;
+      } catch {
+        sel.innerHTML = "";
+        Object.keys(DEMO_CASES).forEach(slug => {
+          const opt = document.createElement("option");
+          opt.value = slug;
+          opt.textContent = `${slug} (Local Demo)`;
+          sel.appendChild(opt);
+        });
+        status.textContent = "Backend offline — showing local demo case.";
+      }
+    }
+
+    async function loadCaseBySlug(slug) {
+      if (!slug) return;
+      const status = document.getElementById("casesStatus");
+      try {
+        const res = await fetch(`${getBaseUrl()}/cases/${encodeURIComponent(slug)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const raw = await res.json();
+        renderReport(normalizeReportPayload(raw));
+        status.textContent = `Loaded ${slug}.`;
+        status.className = "status-msg ok";
+      } catch (err) {
+        if (DEMO_CASES[slug]) {
+          renderReport(structuredClone(DEMO_CASES[slug]));
+          status.textContent = `Loaded ${slug} (Local Demo).`;
+          status.className = "status-msg ok";
+        } else {
+          status.textContent = `Error: ${err.message}`;
+          status.className = "status-msg err";
+        }
+      }
+    }
+
+    function attachLocalUploadedMedia(files) {
+      const vidEl = document.getElementById("uploadedVideoEl");
+      const audEl = document.getElementById("uploadedAudioEl");
+      const vCanvas = document.getElementById("videoViewportCanvas");
+
+      for (const f of files) {
+        if (f.type.startsWith("video/")) {
+          if (uploadedVideoUrl) URL.revokeObjectURL(uploadedVideoUrl);
+          uploadedVideoUrl = URL.createObjectURL(f);
+          vidEl.src = uploadedVideoUrl;
+          vidEl.style.display = "block";
+          vCanvas.style.display = "none";
+          document.getElementById("hudTrackLabel").textContent = `VIDEO: ${f.name}`;
+        } else if (f.type.startsWith("audio/")) {
+          if (uploadedAudioUrl) URL.revokeObjectURL(uploadedAudioUrl);
+          uploadedAudioUrl = URL.createObjectURL(f);
+          audEl.src = uploadedAudioUrl;
+          document.getElementById("hudTrackLabel").textContent = `AUDIO: ${f.name}`;
+        }
+      }
+    }
+
+    document.getElementById("analyzeForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("analyzeBtn");
+      const status = document.getElementById("analyzeStatus");
+      const caseId = document.getElementById("caseIdInput").value.trim();
+      const claim = document.getElementById("claimInput").value.trim();
+      const files = document.getElementById("filesInput").files;
+      if (!caseId) return;
+
+      btn.disabled = true;
+      status.textContent = "Running forensic fraud analysis...";
+      status.className = "status-msg";
+
+      if (files && files.length) attachLocalUploadedMedia(files);
+
+      try {
+        const fd = new FormData();
+        fd.append("case_id", caseId);
+        fd.append("claim", claim);
+        for (const f of files) fd.append("files", f);
+
+        const res = await fetch(`${getBaseUrl()}/analyze`, { method: "POST", body: fd });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const raw = await res.json();
+        const report = normalizeReportPayload(raw);
+        renderReport(report);
+        await loadCasesList();
+        status.textContent = `Analyzed & saved ${report.case_id}.`;
+        status.className = "status-msg ok";
+      } catch (err) {
+        status.textContent = `Backend error (${err.message}).`;
+        status.className = "status-msg err";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById("playPauseBtn").addEventListener("click", togglePlayPause);
+    document.getElementById("muteToggleBtn").addEventListener("click", toggleMute);
+    document.getElementById("nextFakeBtn").addEventListener("click", jumpToNextFakeAnomaly);
+
+    ["videoTimelineCanvas", "audioSpectrogramCanvas"].forEach(id => {
+      document.getElementById(id).addEventListener("click", (e) => {
+        const rect = e.target.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        seekToTime(ratio * mediaDurationSec);
+      });
+    });
+
+    document.getElementById("videoTrackSelect").addEventListener("change", renderVisualAndTracks);
+    document.getElementById("audioTrackSelect").addEventListener("change", renderVisualAndTracks);
+    document.getElementById("baseUrlInput").addEventListener("change", () => {
+      checkHealth();
+      loadCasesList();
+    });
+
+    document.getElementById("openHtmlBtn").addEventListener("click", () => {
+      if (!currentReport?.case_id) return;
+      window.open(`${getBaseUrl()}/cases/${encodeURIComponent(currentReport.case_id)}/report.html`, "_blank", "noopener,noreferrer");
+    });
+
+    document.getElementById("resetCaseBtn").addEventListener("click", resetActiveCaseView);
+    document.getElementById("loadCaseBtn").addEventListener("click", () => {
+      loadCaseBySlug(document.getElementById("casesSelect").value);
+    });
+
+    document.getElementById("searchInput").addEventListener("input", () => {
+      if (currentReport) renderIndicators(currentReport.indicators || []);
+    });
+    document.getElementById("modalityFilter").addEventListener("change", () => {
+      if (currentReport) renderIndicators(currentReport.indicators || []);
+    });
+    document.getElementById("dispositionFilter").addEventListener("change", () => {
+      if (currentReport) renderIndicators(currentReport.indicators || []);
+    });
+    document.getElementById("reviewFindingSelect").addEventListener("change", syncReviewInputsFromSelected);
+
+    document.getElementById("saveReviewBtn").addEventListener("click", async () => {
+      if (!currentReport) return;
+      const fid = document.getElementById("reviewFindingSelect").value;
+      const disposition = document.getElementById("reviewDispositionSelect").value;
+      const reviewerNote = document.getElementById("reviewNoteInput").value;
+      const reviewStatus = document.getElementById("reviewStatus");
+      if (!fid) return;
+
+      try {
+        const slug = encodeURIComponent(currentReport.case_id);
+        const res = await fetch(`${getBaseUrl()}/cases/${slug}/indicators/${encodeURIComponent(fid)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ disposition, reviewer_note: reviewerNote })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const raw = await res.json();
+        renderReport(normalizeReportPayload(raw, currentReport), fid);
+        reviewStatus.textContent = `Saved ${fid} -> ${disposition}`;
+        reviewStatus.className = "status-msg ok";
+      } catch (err) {
+        reviewStatus.textContent = `PATCH failed: ${err.message}`;
+        reviewStatus.className = "status-msg err";
+      }
+    });
+
+    function isEditableTarget(el) {
+      if (!el) return false;
+      const tag = (el.tagName || "").toLowerCase();
+      return tag === "input" || tag === "textarea" || tag === "select" || Boolean(el.isContentEditable);
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.defaultPrevented) return;
+      const keyLower = (e.key || "").toLowerCase();
+      const editable = isEditableTarget(document.activeElement);
+
+      if (((e.metaKey || e.ctrlKey) && !e.altKey && keyLower === "k") || (!editable && !e.metaKey && !e.ctrlKey && !e.altKey && e.key === "/")) {
+        e.preventDefault();
+        const s = document.getElementById("searchInput");
+        s.focus();
+        s.select();
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key === "Enter") {
+        const saveBtn = document.getElementById("saveReviewBtn");
+        if (currentReport && saveBtn && !saveBtn.disabled) {
+          e.preventDefault();
+          saveBtn.click();
+        }
+        return;
+      }
+
+      if (!editable && !e.metaKey && !e.ctrlKey && !e.altKey && e.code === "Space") {
+        e.preventDefault();
+        togglePlayPause();
+        return;
+      }
+
+      if (!editable && !e.metaKey && !e.ctrlKey && !e.altKey && (keyLower === "j" || keyLower === "k")) {
+        e.preventDefault();
+        stepReviewFinding(keyLower === "j" ? 1 : -1);
+        return;
+      }
+
+      if (e.key === "Escape") {
+        document.getElementById("searchInput").value = "";
+        document.getElementById("modalityFilter").value = "";
+        document.getElementById("dispositionFilter").value = "";
+        if (document.activeElement) document.activeElement.blur();
+        if (currentReport) renderIndicators(currentReport.indicators || []);
+        return;
+      }
+
+      if (e.altKey && e.shiftKey && keyLower === "r") {
+        e.preventDefault();
+        resetActiveCaseView();
+        return;
+      }if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        if (keyLower === "i") {
+          e.preventDefault();
+          const inp = document.getElementById("caseIdInput");
+          inp.scrollIntoView({ behavior: "smooth", block: "center" });
+          inp.focus();
+          inp.select();
+        } else if (keyLower === "c") {
+          e.preventDefault();
+          const sel = document.getElementById("casesSelect");
+          sel.scrollIntoView({ behavior: "smooth", block: "center" });
+          loadCasesList().then(() => sel.focus());
+        } else if (keyLower === "l") {
+          e.preventDefault();
+          document.getElementById("loadCaseBtn").click();
+        } else if (keyLower === "g") {
+          e.preventDefault();
+          checkHealth();
+        } else if (keyLower === "t") {
+          e.preventDefault();
+          const vSel = document.getElementById("videoTrackSelect");
+          vSel.scrollIntoView({ behavior: "smooth", block: "center" });
+          vSel.focus();
+        } else if (keyLower === "d") {
+          e.preventDefault();
+          const dSel = document.getElementById("reviewDispositionSelect");
+          dSel.scrollIntoView({ behavior: "smooth", block: "center" });
+          dSel.focus();
+        } else if (keyLower === "n") {
+          e.preventDefault();
+          const note = document.getElementById("reviewNoteInput");
+          note.scrollIntoView({ behavior: "smooth", block: "center" });
+          note.focus();
+        } else if (keyLower === "h") {
+          e.preventDefault();
+          document.getElementById("openHtmlBtn").click();
+        } else if (e.key === "]" || e.key === "ArrowDown") {
+          e.preventDefault();
+          stepReviewFinding(1);
+        } else if (e.key === "[" || e.key === "ArrowUp") {
+          e.preventDefault();
+          stepReviewFinding(-1);
+        }
+      }
+    });
+
+    (async function init() {
+      await checkHealth();
+      await loadCasesList();
+      renderReport(structuredClone(DEMO_CASES["CASE-2026-0814"]));
+    })();
+  </script>
+</body>
+</html>
